@@ -1,0 +1,9 @@
+name: LitematicaManager
+version: 1.0.0
+main: com.tripu1404.litematicamanager.LitematicaManager
+api: ["1.0.0"]
+author: Tripu1404
+commands:
+  npaste:
+    description: Pega estructuras .lite rápidamente
+    permission: litematicamanager.command.npaste
