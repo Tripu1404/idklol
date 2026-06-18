@@ -79,8 +79,8 @@ public class LitematicaManager extends PluginBase {
                     BlockVector3 targetPos = basePos.add(lBlock.getOffset());
                     Block blockToPlace = Block.get(lBlock.getBlockId());
                     
-                    // Colocación directa e instantánea sin actualizaciones pesadas en bucle
-                    level.setBlock(targetPos, blockToPlace, true, true);
+                    // .asVector3() soluciona el error de casteo convirtiendo enteros a doubles para la API del mundo
+                    level.setBlock(targetPos.asVector3(), blockToPlace, true, true);
                     placedCount++;
                 }
 
@@ -100,7 +100,7 @@ public class LitematicaManager extends PluginBase {
         try (DataInputStream dis = new DataInputStream(new FileInputStream(file))) {
             byte[] allBytes = dis.readAllBytes();
             ByteBuffer buffer = ByteBuffer.wrap(allBytes);
-            buffer.order(ByteOrder.LITTLE_ENDIAN); // Mantiene compatibilidad con el volcado crudo de memoria x86/ARM
+            buffer.order(ByteOrder.LITTLE_ENDIAN); // Forzado a Little-Endian para leer el volcado crudo de C++
 
             if (buffer.remaining() < 8) return list;
 
@@ -108,7 +108,7 @@ public class LitematicaManager extends PluginBase {
             long size = buffer.getLong();
 
             for (long i = 0; i < size; i++) {
-                if (buffer.remaining() < 20) break; // 12 bytes de BlockPos + 4 del ID + 4 del RuntimeID
+                if (buffer.remaining() < 20) break; // Evita desbordamiento: 12 bytes de BlockPos + 4 del ID + 4 del RuntimeID
 
                 int x = buffer.getInt();
                 int y = buffer.getInt();
