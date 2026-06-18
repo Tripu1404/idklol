@@ -1,0 +1,53 @@
+name: Compile LitematicaManager Emergency Build
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Permite ejecutar la compilación manualmente desde GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout del código fuente
+      uses: actions/checkout@v4
+
+    - name: Configurar Entorno de Java (JDK 17)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Descargar Nukkit API sin Maven
+      run: |
+        mkdir -p libs
+        # Descarga la última build estable conocida de la API de Cloudburst/Nukkit
+        curl -L -o libs/nukkit.jar https://github.com/PetteriM1/NukkitPetteriM1Edition/releases/download/4437/Nukkit-PM1E.jar
+
+    - name: Compilar Código Fuente y Generar JAR
+      run: |
+        mkdir -p bin
+        
+        # 1. Encontrar todos los archivos .java en la estructura del proyecto
+        find src/main/java -name "*.java" > sources.txt
+        
+        # 2. Compilar usando el JAR de Nukkit como classpath binario
+        javac -d bin -cp "libs/nukkit.jar" @sources.txt
+        
+        # 3. Copiar el archivo plugin.yml y recursos a la carpeta de salida binaria
+        if [ -d "src/main/resources" ]; then
+          cp -r src/main/resources/* bin/
+        fi
+        
+        # 4. Empaquetar todo en el JAR final usando el autor y nombre del proyecto
+        mkdir -p target
+        jar -cf target/LitematicaManager.jar -C bin .
+
+    - name: Subir Artefacto Compilado
+      uses: actions/upload-artifact@v4
+      with:
+        name: LitematicaManager-Plugin
+        path: target/LitematicaManager.jar
