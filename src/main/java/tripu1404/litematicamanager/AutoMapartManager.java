@@ -2,7 +2,6 @@ package com.tripu1404.litematicamanager;
 
 import cn.nukkit.Player;
 import cn.nukkit.block.Block;
-import cn.nukkit.block.BlockID;
 import cn.nukkit.command.Command;
 import cn.nukkit.command.CommandSender;
 import cn.nukkit.inventory.PlayerInventory;
@@ -23,8 +22,8 @@ import java.util.Map;
 public class AutoMapartManager extends PluginBase {
 
     private File mapartFolder;
-    // Mapa estático cacheado con colores promedio de bloques comunes para Mapart (Formato Bedrock/Nukkit)
-    private final Map<Block, Color> blockColors = new HashMap<>();
+    // Cambiamos la clave a un String "id:meta" o un hash único para que diferencie las lanas correctamente
+    private final Map<String, Color> blockColors = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -33,33 +32,29 @@ public class AutoMapartManager extends PluginBase {
             this.mapartFolder.mkdirs();
         }
         
-        // Inicializamos una paleta básica de bloques con sus colores correspondientes de mapa
-        registerBlockColor(BlockID.WOOL, 0, new Color(221, 221, 221));       // Blanco
-        registerBlockColor(BlockID.WOOL, 1, new Color(219, 125, 62));        // Naranja
-        registerBlockColor(BlockID.WOOL, 2, new Color(179, 80, 188));        // Magenta
-        registerBlockColor(BlockID.WOOL, 3, new Color(107, 138, 201));       // Celeste
-        registerBlockColor(BlockID.WOOL, 4, new Color(177, 166, 39));        // Amarillo
-        registerBlockColor(BlockID.WOOL, 5, new Color(65, 174, 56));         // Verde Lima
-        registerBlockColor(BlockID.WOOL, 6, new Color(208, 132, 153));       // Rosa
-        registerBlockColor(BlockID.WOOL, 7, new Color(64, 64, 64));          // Gris Oscuro
-        registerBlockColor(BlockID.WOOL, 8, new Color(154, 161, 161));       // Gris Claro
-        registerBlockColor(BlockID.WOOL, 9, new Color(46, 110, 137));        // Cian
-        registerBlockColor(BlockID.WOOL, 10, new Color(126, 61, 181));       // Morado
-        registerBlockColor(BlockID.WOOL, 11, new Color(46, 56, 141));        // Azul
-        registerBlockColor(BlockID.WOOL, 12, new Color(79, 50, 31));         // Marrón
-        registerBlockColor(BlockID.WOOL, 13, new Color(53, 70, 27));         // Verde
-        registerBlockColor(BlockID.WOOL, 14, new Color(150, 52, 48));        // Rojo
-        registerBlockColor(BlockID.WOOL, 15, new Color(25, 22, 22));         // Negro
-        registerBlockColor(BlockID.CONCRETE, 0, new Color(207, 213, 214));   // Concreto Blanco
-        registerBlockColor(BlockID.CONCRETE, 14, new Color(142, 32, 32));    // Concreto Rojo
-        registerBlockColor(BlockID.GOLD_BLOCK, 0, new Color(244, 230, 76));  // Oro
-        registerBlockColor(BlockID.LAPIS_BLOCK, 0, new Color(30, 67, 140));  // Lapis
+        // Registro exacto basado en la paleta de IDs de tu imagen (ID: 35 para Lana)
+        registerBlockColor(35, 0, new Color(221, 221, 221));       // White Wool (35:0)
+        registerBlockColor(35, 1, new Color(219, 125, 62));        // Orange Wool (35:1)
+        registerBlockColor(35, 2, new Color(179, 80, 188));        // Magenta Wool (35:2)
+        registerBlockColor(35, 3, new Color(107, 138, 201));       // Light Blue Wool (35:3)
+        registerBlockColor(35, 4, new Color(177, 166, 39));        // Yellow Wool (35:4)
+        registerBlockColor(35, 5, new Color(65, 174, 56));         // Lime Wool (35:5)
+        registerBlockColor(35, 6, new Color(208, 132, 153));       // Pink Wool (35:6)
+        registerBlockColor(35, 7, new Color(64, 64, 64));          // Gray Wool (35:7)
+        registerBlockColor(35, 8, new Color(154, 161, 161));       // Light Gray Wool (35:8)
+        registerBlockColor(35, 9, new Color(46, 110, 137));        // Cyan Wool (35:9)
+        registerBlockColor(35, 10, new Color(126, 61, 181));       // Purple Wool (35:10)
+        registerBlockColor(35, 11, new Color(46, 56, 141));        // Blue Wool (35:11)
+        registerBlockColor(35, 12, new Color(79, 50, 31));         // Brown Wool (35:12)
+        registerBlockColor(35, 13, new Color(53, 70, 27));         // Green Wool (35:13)
+        registerBlockColor(35, 14, new Color(150, 52, 48));        // Red Wool (35:14)
+        registerBlockColor(35, 15, new Color(25, 22, 22));         // Black Wool (35:15)
 
-        this.getLogger().info(TextFormat.GREEN + "AutoMapartManager cargado. Sube tus .png a /plugins/LitematicaManager/maparts/");
+        this.getLogger().info(TextFormat.GREEN + "AutoMapartManager corregido cargado exitosamente.");
     }
 
     private void registerBlockColor(int id, int meta, Color color) {
-        blockColors.put(Block.get(id, meta), color);
+        blockColors.put(id + ":" + meta, color);
     }
 
     @Override
@@ -85,17 +80,15 @@ public class AutoMapartManager extends PluginBase {
             }
 
             boolean useOnlyInventory = args.length > 1 && Boolean.parseBoolean(args[1]);
-
-            player.sendMessage(TextFormat.YELLOW + "Procesando imagen y calculando similitudes de color...");
+            player.sendMessage(TextFormat.YELLOW + "Procesando imagen con soporte de metadatos de color...");
 
             try {
                 BufferedImage image = ImageIO.read(file);
                 int width = image.getWidth();
                 int height = image.getHeight();
 
-                // Límite de seguridad para evitar congelar el hilo principal del servidor (128x128 es 1 mapa completo)
                 if (width > 256 || height > 256) {
-                    player.sendMessage(TextFormat.RED + "Imagen demasiado grande. Máximo sugerido: 256x256 píxeles.");
+                    player.sendMessage(TextFormat.RED + "Imagen demasiado grande. Máximo: 256x256.");
                     return true;
                 }
 
@@ -104,32 +97,36 @@ public class AutoMapartManager extends PluginBase {
                 PlayerInventory inv = player.getInventory();
                 int placedCount = 0;
 
-                // Recorremos la imagen tal como lo hace tu bucle z/x en C++
                 for (int x = 0; x < width; x++) {
                     for (int z = 0; z < height; z++) {
                         int rgb = image.getRGB(x, z);
                         
-                        // Ignorar píxeles completamente transparentes (Alfa = 0)
-                        if (((rgb >> 24) & 0xff) == 0) continue;
+                        if (((rgb >> 24) & 0xff) == 0) continue; // Salta transparencias
 
                         Color pixelColor = new Color((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
 
-                        // Encontrar el bloque con el color más cercano
-                        Block bestBlock = getClosestBlock(pixelColor, useOnlyInventory, inv);
+                        // Buscamos el String identificador más adecuado (ej: "35:14")
+                        String bestBlockKey = getClosestBlockKey(pixelColor, useOnlyInventory, inv);
 
-                        if (bestBlock != null) {
-                            // Construcción en el plano XZ (horizontal en el suelo)
+                        if (bestBlockKey != null) {
+                            String[] parts = bestBlockKey.split(":");
+                            int id = Integer.parseInt(parts[0]);
+                            int meta = Integer.parseInt(parts[1]);
+
+                            // Obtenemos la instancia específica pasándole el ID y el Meta exacto de la lana
+                            Block blockToPlace = Block.get(id, meta);
+
                             Vector3 targetPos = basePos.add(x, 0, z);
-                            level.setBlock(targetPos, bestBlock, true, true);
+                            level.setBlock(targetPos, blockToPlace, true, true);
                             placedCount++;
                         }
                     }
                 }
 
-                player.sendMessage(TextFormat.GREEN + "¡Mapart generado con éxito! Se colocaron " + placedCount + " bloques.");
+                player.sendMessage(TextFormat.GREEN + "¡Mapart generado con éxito! Bloques mapeados: " + placedCount);
 
             } catch (IOException e) {
-                player.sendMessage(TextFormat.RED + "Error al leer el archivo de imagen.");
+                player.sendMessage(TextFormat.RED + "Error cargando la imagen.");
                 this.getLogger().error("Excepción en AutoMapartManager: ", e);
             }
             return true;
@@ -137,7 +134,6 @@ public class AutoMapartManager extends PluginBase {
         return false;
     }
 
-    // Algoritmo de distancia Euclidiana tridimensional (RGB) idéntico a tu getDifference en C++
     private double getDifference(Color c1, Color c2) {
         int dR = c1.getRed() - c2.getRed();
         int dG = c1.getGreen() - c2.getGreen();
@@ -145,17 +141,18 @@ public class AutoMapartManager extends PluginBase {
         return Math.sqrt(dR * dR + dG * dG + dB * dB);
     }
 
-    private Block getClosestBlock(Color pixelColor, boolean useInventory, PlayerInventory inv) {
-        Block bestBlock = null;
+    private String getClosestBlockKey(Color pixelColor, boolean useInventory, PlayerInventory inv) {
+        String bestKey = null;
         double closestColor = 999.0;
 
-        for (Map.Entry<Block, Color> entry : blockColors.entrySet()) {
-            Block block = entry.getKey();
+        for (Map.Entry<String, Color> entry : blockColors.entrySet()) {
+            String key = entry.getKey();
             
-            // Si el modo estricto de inventario está activo, verifica si el jugador lleva el bloque
             if (useInventory) {
-                Item itemEquivalent = Item.get(block.getId(), block.getDamage());
-                if (!inv.contains(itemEquivalent)) {
+                String[] parts = key.split(":");
+                int id = Integer.parseInt(parts[0]);
+                int meta = Integer.parseInt(parts[1]);
+                if (!inv.contains(Item.get(id, meta))) {
                     continue;
                 }
             }
@@ -163,9 +160,9 @@ public class AutoMapartManager extends PluginBase {
             double difference = getDifference(pixelColor, entry.getValue());
             if (difference < closestColor) {
                 closestColor = difference;
-                bestBlock = block;
+                bestKey = key;
             }
         }
-        return bestBlock;
+        return bestKey;
     }
 }
