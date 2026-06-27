@@ -1,9 +1,10 @@
 name: LitematicaManager
-version: 1.0.0
-main: com.tripu1404.litematicamanager.LitematicaManager
+version: 1.1.0
+main: com.tripu1404.litematicamanager.AutoMapartManager
 api: ["1.0.0"]
 author: Tripu1404
 commands:
-  npaste:
-    description: Pega estructuras .lite rápidamente
-    permission: litematicamanager.command.npaste
+  amap:
+    description: Carga un archivo PNG y lo transforma en bloques en el suelo
+    permission: litematicamanager.command.amap
+    usage: "/amap <nombre_imagen> [usar_inventario]"
